@@ -48,6 +48,43 @@ python src/main.py
 Lần chạy đầu chỉ đồng bộ vị trí (không gửi mail cũ). `delta_state.json` nhớ
 điểm đã đọc → restart không trùng, không sót.
 
+## Chạy bằng Docker
+
+Đã có `Dockerfile` + `docker-compose.yml`. Trạng thái delta lưu ra thư mục
+`./data` (volume) nên restart container không gửi trùng.
+
+### Dùng docker compose (khuyến nghị)
+
+```bash
+cp .env.example .env     # điền giá trị thật
+docker compose up -d --build        # build + chạy nền
+docker compose logs -f              # xem log
+docker compose down                 # dừng
+```
+
+Sửa `.env` xong thì nạp lại:
+
+```bash
+docker compose up -d --build
+```
+
+### Chạy bằng docker thuần (không compose)
+
+```bash
+docker build -t m365-alert-telegram-webhook .
+
+docker run -d --name m365-alert --restart unless-stopped \
+  --env-file .env \
+  -e STATE_FILE=/data/delta_state.json \
+  -v "$(pwd)/data:/data" \
+  m365-alert-telegram-webhook
+
+docker logs -f m365-alert          # xem log
+docker rm -f m365-alert            # dừng + xóa container
+```
+
+> Windows PowerShell: thay `$(pwd)` bằng `${PWD}`.
+
 ## Biến môi trường
 
 | Biến | Ý nghĩa |

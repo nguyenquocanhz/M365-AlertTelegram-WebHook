@@ -1,0 +1,10 @@
+.env
+data/
+delta_state.json
+__pycache__/
+*.pyc
+.venv/
+venv/
+.git/
+.gitignore
+README.md

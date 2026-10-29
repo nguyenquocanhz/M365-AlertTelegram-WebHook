@@ -1,0 +1,11 @@
+services:
+  alert:
+    build: .
+    image: m365-alert-telegram-webhook
+    container_name: m365-alert
+    env_file: .env
+    environment:
+      STATE_FILE: /data/delta_state.json
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
