@@ -1,0 +1,9 @@
+# Bí mật & trạng thái runtime
+.env
+delta_state.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
