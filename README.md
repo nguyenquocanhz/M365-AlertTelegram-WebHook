@@ -85,6 +85,47 @@ docker rm -f m365-alert            # dừng + xóa container
 
 > Windows PowerShell: thay `$(pwd)` bằng `${PWD}`.
 
+## Test không cần M365 Business
+
+Có 3 cách, từ nhanh tới đầy đủ.
+
+### Cách 1 — Chỉ test gửi Telegram/Teams (nhanh nhất)
+
+Không đụng tới Graph. Gửi 1 mail mẫu thẳng ra kênh:
+
+```bash
+export CHANNELS=telegram TG_TOKEN=... TG_CHAT=...
+python tests/send_sample.py
+```
+
+- **Telegram** hoàn toàn free (chỉ cần tạo bot qua `@BotFather`).
+- **Teams** không có cũng test được: đổi `TEAMS_WEBHOOK` thành một URL
+  [webhook.site](https://webhook.site) để xem đúng JSON card gửi đi.
+
+### Cách 2 — Test end-to-end bằng mock Graph (không cần mailbox thật)
+
+Giả lập endpoint delta của Graph bằng server nội bộ:
+
+```bash
+# Terminal 1: chạy mock
+python tests/mock_graph.py
+
+# Terminal 2: chạy app trỏ vào mock
+MOCK=1 GRAPH_BASE=http://localhost:8080/v1.0 \
+  CHANNELS=telegram TG_TOKEN=... TG_CHAT=... \
+  KEYWORDS="báo giá" POLL_SEC=5 python src/main.py
+```
+
+`MOCK=1` bỏ qua đăng nhập Microsoft; mock trả 1 mail mới có từ khóa để app
+lọc và bắn cảnh báo. Chạy lại từ đầu thì xoá `delta_state.json`.
+
+### Cách 3 — Dùng tenant thật MIỄN PHÍ (test đúng Graph)
+
+Đăng ký **[Microsoft 365 Developer Program](https://developer.microsoft.com/microsoft-365/dev-program)**:
+nhận sandbox **E5 free 90 ngày (tự gia hạn)**, có sẵn ~25 user + mailbox thật.
+Làm app registration + `Mail.Read` trên tenant này y như production — đây là
+cách kiểm thử sát thực tế nhất mà không tốn tiền.
+
 ## Biến môi trường
 
 | Biến | Ý nghĩa |
@@ -97,3 +138,5 @@ docker rm -f m365-alert            # dừng + xóa container
 | `KEYWORDS` | Từ khóa, phân cách bằng dấu phẩy (trống = lấy tất cả) |
 | `SCAN_BODY` | `1` = lọc cả nội dung, không chỉ tiêu đề |
 | `POLL_SEC` | Chu kỳ kiểm tra (giây) |
+| `MOCK` | `1` = chế độ test, bỏ qua đăng nhập Microsoft |
+| `GRAPH_BASE` | Đổi endpoint Graph (vd trỏ mock server khi test) |

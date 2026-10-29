@@ -8,6 +8,7 @@ Telegram và/hoặc Teams.
 import json
 import os
 import pathlib
+import sys
 import time
 
 import msal
@@ -15,11 +16,17 @@ import requests
 
 import notifiers
 
+try:                                   # in tiếng Việt không lỗi trên Windows
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 # ---- Cấu hình (đặt qua biến môi trường / file .env) ----
-TENANT = os.environ["TENANT_ID"]
-CLIENT = os.environ["CLIENT_ID"]
-SECRET = os.environ["CLIENT_SECRET"]
-MAILBOX = os.environ["MAILBOX"]                 # vd: support@congty.com
+MOCK = os.environ.get("MOCK", "0") == "1"       # test không cần M365 thật
+TENANT = os.environ.get("TENANT_ID", "")
+CLIENT = os.environ.get("CLIENT_ID", "")
+SECRET = os.environ.get("CLIENT_SECRET", "")
+MAILBOX = os.environ.get("MAILBOX", "test@example.com")  # vd: support@congty.com
 
 CHANNELS = [c.strip().lower() for c in
             os.environ.get("CHANNELS", "telegram").split(",") if c.strip()]
@@ -33,10 +40,13 @@ SCAN_BODY = os.environ.get("SCAN_BODY", "0") == "1"
 POLL_SEC = int(os.environ.get("POLL_SEC", "30"))
 STATE_FILE = pathlib.Path(os.environ.get("STATE_FILE", "delta_state.json"))
 
-GRAPH = "https://graph.microsoft.com/v1.0"
+# Cho phép trỏ sang mock server khi test (vd http://localhost:8080/v1.0)
+GRAPH = os.environ.get("GRAPH_BASE", "https://graph.microsoft.com/v1.0")
 
 
 def get_token():
+    if MOCK:                       # test: không gọi Microsoft thật
+        return "mock-token"
     app = msal.ConfidentialClientApplication(
         CLIENT, authority=f"https://login.microsoftonline.com/{TENANT}",
         client_credential=SECRET)
